@@ -1,0 +1,4 @@
+flask
+notion-client==2.7.0
+openai
+gunicorn

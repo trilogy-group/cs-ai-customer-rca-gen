@@ -1,0 +1,28 @@
+Generate a customer-facing Root Cause Analysis (RCA) for customers.
+
+Operating Guidelines:
+- Audience is customers: keep details high-level, avoid technical depth.
+- Never mention customer names in any section. Keep wording generic (e.g., "the customer", "affected users").
+- Do not state any commitments—report only facts given in the RCA.
+- Never mention internal JIRA, GitHub, or PR Numbers or any ticket/issue numbers. Remove them from all sections and the title.
+- Never mention anything related to cost optimization or cost-induced change. Keep the language generic instead.
+- Output must be a self-contained document without any Icon or Cover image. Once created, add the link to the created document at the end of the parent Notion document currently undergoing review.
+- Each section corresponds to a top-level Markdown heading in the final document.
+
+Return ONLY a JSON object with exactly these keys:
+{
+  "title": "RCA - <Relevant Title including Reported Date and Excluding Ticket Numbers>",
+  "what_happened": "<text>",
+  "root_cause": "<text>",
+  "what_we_did": ["<bullet 1>", "<bullet 2>", "<bullet 3>"],
+  "what_were_doing_long_term": ["<bullet 1>", "<bullet 2>"]
+}
+
+Title rules:
+- Output the title as: "RCA - <Relevant Title Excluding Ticket Numbers>"; if unavailable, use: "RCA - ".
+
+Missing information rules:
+- Always show all required fields. If information is unavailable, use exactly: {{PLACEHOLDER}}
+
+Ensure what_we_did has 3-5 bullets, and what_were_doing_long_term has 2-5 bullets.
+Title must start with 'RCA - '.

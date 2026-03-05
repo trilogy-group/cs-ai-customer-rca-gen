@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+.python-version
+.DS_Store
+
+# Sensitive files — never commit
+token.json
+token-template.json
+processed_rcas.json
+ngrok.yml
+
+# Lambda build artifacts — regenerated from requirements.txt
+lambda_build/
+lambda_package.zip
