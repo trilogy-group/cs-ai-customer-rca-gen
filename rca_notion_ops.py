@@ -182,6 +182,124 @@ def has_existing_customer_rca(page_id: str) -> bool:
     return False
 
 
+def _is_customer_rca_link_block(block: Dict[str, Any]) -> bool:
+    """True if block is a paragraph containing a Customer-Facing RCA link."""
+    if block.get("type") != "paragraph":
+        return False
+    for rt in (block.get("paragraph", {}).get("rich_text", []) or []):
+        plain = (rt.get("plain_text") or "").strip()
+        if plain in (CUSTOMER_RCA_LINK_TEXT, "Updated Customer-Facing RCA Document") and (rt.get("href") or ((rt.get("text", {}) or {}).get("link") or {}).get("url")):
+            return True
+    return False
+
+
+def _is_customer_rca_section_heading(block: Dict[str, Any]) -> bool:
+    """True if block is the 'Customer-Facing RCA Draft' heading."""
+    if block.get("type") != "heading_2":
+        return False
+    text = _plain_text_from_rich_text(block.get("heading_2", {}).get("rich_text", []))
+    return text.strip() == "Customer-Facing RCA Draft"
+
+
+_CUSTOMER_RCA_SECTION_HEADINGS = {"What Happened", "Root Cause", "What We Did", "What We're Doing Long-Term"}
+
+
+def remove_old_customer_rca_blocks(page_id: str) -> int:
+    """Delete all blocks belonging to the customer-facing RCA section from the parent page.
+
+    Walks the page blocks and removes:
+      - The \"Customer-Facing RCA Draft\" heading and everything below it that
+        belongs to the generated section (headings, paragraphs, bullets, dividers, links).
+      - Any standalone divider + link-paragraph pairs that were appended by
+        append_customer_rca_link_only().
+
+    Returns the number of blocks deleted.
+    """
+    notion = get_notion_client()
+    blocks = get_page_blocks(page_id)
+    ids_to_delete: List[str] = []
+    in_section = False
+
+    for i, b in enumerate(blocks):
+        bid = b.get("id", "")
+        btype = b.get("type", "")
+
+        if _is_customer_rca_section_heading(b):
+            in_section = True
+            # Also grab the divider immediately before the heading if present
+            if i > 0 and blocks[i - 1].get("type") == "divider":
+                prev_id = blocks[i - 1].get("id", "")
+                if prev_id and prev_id not in ids_to_delete:
+                    ids_to_delete.append(prev_id)
+            ids_to_delete.append(bid)
+            continue
+
+        if in_section:
+            text = ""
+            if btype in ("heading_2", "heading_3"):
+                text = _plain_text_from_rich_text(b.get(btype, {}).get("rich_text", []))
+
+            if btype == "divider":
+                ids_to_delete.append(bid)
+                continue
+            if btype in ("heading_2", "heading_3") and text.strip() in _CUSTOMER_RCA_SECTION_HEADINGS:
+                ids_to_delete.append(bid)
+                continue
+            if btype in ("paragraph", "bulleted_list_item", "numbered_list_item"):
+                ids_to_delete.append(bid)
+                continue
+            if _is_customer_rca_link_block(b):
+                ids_to_delete.append(bid)
+                continue
+            # Hit a block that doesn't belong to the section — stop
+            in_section = False
+
+        # Standalone link blocks (from append_customer_rca_link_only)
+        if not in_section and _is_customer_rca_link_block(b):
+            # Also grab the divider immediately before it
+            if i > 0 and blocks[i - 1].get("type") == "divider":
+                prev_id = blocks[i - 1].get("id", "")
+                if prev_id and prev_id not in ids_to_delete:
+                    ids_to_delete.append(prev_id)
+            ids_to_delete.append(bid)
+
+    for bid in ids_to_delete:
+        try:
+            notion.blocks.delete(block_id=bid)
+        except Exception:
+            pass
+
+    return len(ids_to_delete)
+
+
+def archive_old_customer_rca_child(page_id: str) -> Optional[str]:
+    """Archive (soft-delete) the old customer-facing RCA child page.
+
+    Reads the current Customer RCA Doc URL property, extracts the page ID,
+    and archives it. Returns the archived page ID or None.
+    """
+    old_url = ""
+    try:
+        old_url = get_page_url_property(page_id, CUSTOMER_RCA_DOC_PROP)
+    except Exception:
+        pass
+    if not old_url:
+        return None
+
+    # Extract page ID from Notion URL (last 32 hex chars)
+    match = re.search(r"([0-9a-f]{32})$", old_url.rstrip("/"))
+    if not match:
+        return None
+
+    child_page_id = _format_uuid(match.group(1))
+    try:
+        notion = get_notion_client()
+        notion.pages.update(page_id=child_page_id, archived=True)
+        return child_page_id
+    except Exception:
+        return None
+
+
 def get_page_url_property(page_id: str, prop_name: str) -> str:
     notion = get_notion_client()
     page = notion.pages.retrieve(page_id=_format_uuid(page_id))

@@ -69,6 +69,14 @@ def _process_rca(page_id: str, force: bool) -> Dict[str, Any]:
     already_processed = notion_ops.has_existing_customer_rca(page_id)
 
     logger.info("Processing RCA page_id=%s already_processed=%s force=%s", page_id, already_processed, force)
+
+    # Clean up old artifacts before reading content for generation
+    if already_processed:
+        archived_id = notion_ops.archive_old_customer_rca_child(page_id)
+        logger.info("Archived old child page: %s", archived_id)
+        deleted_count = notion_ops.remove_old_customer_rca_blocks(page_id)
+        logger.info("Removed %d old customer-RCA blocks from parent", deleted_count)
+
     blocks = notion_ops.get_page_blocks(page_id)
     rca_text = notion_ops.blocks_to_text(blocks)
     title_hint = notion_ops.build_title_hint(page_id)
@@ -76,11 +84,7 @@ def _process_rca(page_id: str, force: bool) -> Dict[str, Any]:
     rca_data = generate_customer_rca(rca_text=rca_text, title_hint=title_hint)
     _, child_url = notion_ops.create_customer_rca_child_page(page_id, rca_data)
 
-    if already_processed or force:
-        notion_ops.append_customer_rca_link_only(page_id, child_url, label="Updated Customer-Facing RCA Document")
-    else:
-        notion_ops.append_customer_rca_section_and_link(page_id, rca_data, child_url)
-
+    notion_ops.append_customer_rca_section_and_link(page_id, rca_data, child_url)
     notion_ops.set_page_url_property(page_id, notion_ops.CUSTOMER_RCA_DOC_PROP, child_url)
     return {"child_url": child_url, "regenerated": bool(already_processed or force)}
 
