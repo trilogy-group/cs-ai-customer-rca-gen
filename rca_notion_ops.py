@@ -216,6 +216,7 @@ def remove_old_customer_rca_blocks(page_id: str) -> int:
         belongs to the generated section (headings, paragraphs, bullets, dividers, links).
       - Any standalone divider + link-paragraph pairs that were appended by
         append_customer_rca_link_only().
+      - Review callout blocks inserted by the automation.
 
     Returns the number of blocks deleted.
     """
@@ -255,12 +256,20 @@ def remove_old_customer_rca_blocks(page_id: str) -> int:
             if _is_customer_rca_link_block(b):
                 ids_to_delete.append(bid)
                 continue
-            # Hit a block that doesn't belong to the section — stop
+            # Hit a block that doesn't belong to the section \u2014 stop
             in_section = False
 
         # Standalone link blocks (from append_customer_rca_link_only)
         if not in_section and _is_customer_rca_link_block(b):
             # Also grab the divider immediately before it
+            if i > 0 and blocks[i - 1].get("type") == "divider":
+                prev_id = blocks[i - 1].get("id", "")
+                if prev_id and prev_id not in ids_to_delete:
+                    ids_to_delete.append(prev_id)
+            ids_to_delete.append(bid)
+
+        # Review callout blocks added by append_customer_rca_link_only
+        if not in_section and _is_review_callout_block(b):
             if i > 0 and blocks[i - 1].get("type") == "divider":
                 prev_id = blocks[i - 1].get("id", "")
                 if prev_id and prev_id not in ids_to_delete:
@@ -363,37 +372,64 @@ def _bullets_block(items: List[str]) -> List[Dict[str, Any]]:
     return out
 
 
-def _review_callout_block() -> Dict[str, Any]:
+_REVIEW_CALLOUT_MARKER = "Review Action Required: "
+
+
+def _is_review_callout_block(block: Dict[str, Any]) -> bool:
+    """True if block is the review-action-required callout we insert."""
+    if block.get("type") != "callout":
+        return False
+    text = _plain_text_from_rich_text(block.get("callout", {}).get("rich_text", []))
+    return text.startswith(_REVIEW_CALLOUT_MARKER)
+
+
+def _review_callout_block(child_url: Optional[str] = None) -> Dict[str, Any]:
     """Callout reminding the reviewer to mark 'Customer RCA Ready' in the database view."""
+    rich_text: List[Dict[str, Any]] = [
+        {
+            "type": "text",
+            "text": {"content": _REVIEW_CALLOUT_MARKER},
+            "annotations": {"bold": True},
+        },
+        {
+            "type": "text",
+            "text": {"content": "Please review the "},
+        },
+    ]
+    if child_url:
+        rich_text.append({
+            "type": "text",
+            "text": {"content": "Customer-Facing RCA", "link": {"url": child_url}},
+            "annotations": {"bold": True, "underline": True},
+        })
+    else:
+        rich_text.append({
+            "type": "text",
+            "text": {"content": "Customer-Facing RCA"},
+            "annotations": {"bold": True},
+        })
+    rich_text.extend([
+        {
+            "type": "text",
+            "text": {"content": " and once approved, mark the \"Customer RCA Ready\" checkbox in the "},
+        },
+        {
+            "type": "text",
+            "text": {"content": "Customer RCA View", "link": {"url": CUSTOMER_RCA_VIEW_URL}},
+            "annotations": {"bold": True, "underline": True},
+        },
+        {
+            "type": "text",
+            "text": {"content": "."},
+        },
+    ])
     return {
         "object": "block",
         "type": "callout",
         "callout": {
             "icon": {"type": "emoji", "emoji": "\u26a0\ufe0f"},
             "color": "yellow_background",
-            "rich_text": [
-                {
-                    "type": "text",
-                    "text": {"content": "Review Action Required: "},
-                    "annotations": {"bold": True},
-                },
-                {
-                    "type": "text",
-                    "text": {"content": "Once you have reviewed and approved this Customer RCA, please mark it as ready by updating the \"Customer RCA Ready\" checkbox in the "},
-                },
-                {
-                    "type": "text",
-                    "text": {
-                        "content": "Customer RCA View",
-                        "link": {"url": CUSTOMER_RCA_VIEW_URL},
-                    },
-                    "annotations": {"bold": True, "underline": True},
-                },
-                {
-                    "type": "text",
-                    "text": {"content": "."},
-                },
-            ],
+            "rich_text": rich_text,
         },
     }
 
@@ -402,7 +438,6 @@ def create_customer_rca_child_page(parent_page_id: str, rca_data: Dict[str, Any]
     notion = get_notion_client()
     title = rca_data.get("title") or "RCA - Untitled Incident"
     children: List[Dict[str, Any]] = []
-    children.append(_review_callout_block())
     children.append(_heading_block("What Happened", 2))
     children.append(_paragraph_block(rca_data.get("what_happened") or "No information available at this time."))
     children.append(_heading_block("Root Cause", 2))
@@ -448,6 +483,7 @@ def append_customer_rca_section_and_link(page_id: str, rca_data: Dict[str, Any],
 def append_customer_rca_link_only(page_id: str, child_url: str, label: str = CUSTOMER_RCA_LINK_TEXT) -> None:
     notion = get_notion_client()
     blocks: List[Dict[str, Any]] = [{"object": "block", "type": "divider", "divider": {}}]
+    blocks.append(_review_callout_block(child_url))
     blocks.append(
         {
             "object": "block",
