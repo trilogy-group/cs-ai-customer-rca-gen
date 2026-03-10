@@ -18,10 +18,25 @@ Title rules:
 - If no date is available, omit the date portion. Title must always start with "RCA - ".
 
 What Happened section rules:
-- The what_happened text MUST begin with when the incident occurred (date and time if available) and how long it lasted (duration or time-to-resolution).
-- Example opening: "On February 15, 2026, at approximately 14:00 UTC, users experienced login failures for roughly 3 hours."
-- If timing information (date, time, or duration) is not available in the RCA, explicitly state: "The exact timing/duration of the incident is not specified in the available information."
-- After the timing, provide a high-level summary of the incident.
+- The what_happened text MUST begin with when the incident occurred and how long it lasted.
+- Use whatever timing data IS available in the RCA: dates, approximate times, detection gaps, resolution durations.
+- Example: "On November 11, 2025, an issue was detected after approximately 25.5 hours, taking roughly 9.5 hours to resolve once identified."
+- Only if NO timing data at all exists in the RCA, state: "The exact timing/duration of the incident is not specified in the available information."
+- NEVER combine actual timing data with the "not specified" fallback phrase in the same sentence.
+- After the timing, provide a high-level summary of the impact on users.
+
+What We Did section rules:
+- Write each bullet as a direct statement of the action taken.
+- Use past tense and active voice: "Deployed a fix to...", "Identified and corrected...", "Restored service by..."
+- Do NOT reference "the RCA" in the text. Speak as the service provider directly.
+
+What We're Doing Long-Term section rules:
+- Write each bullet as a direct, simple statement of the planned action.
+- Use active voice: "We are improving...", "We plan to...", "We are adding..."
+- Do NOT use phrases like "The RCA identifies...", "The RCA states...", "It was identified that...", or "...as a follow-up area."
+- Keep each bullet to one clear, actionable sentence.
+- Example good: "We are improving monitoring to detect degraded backend nodes faster."
+- Example bad: "The RCA identifies stronger monitoring for degraded backend nodes as a follow-up area."
 
 Return ONLY a JSON object with exactly these keys:
 {
