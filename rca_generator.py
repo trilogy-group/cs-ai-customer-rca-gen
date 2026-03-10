@@ -96,9 +96,9 @@ def generate_customer_rca(rca_text: str, title_hint: str) -> Dict[str, Any]:
     desired_title = _normalize_title(title_hint)
 
     resp = client.chat.completions.create(
-        model="gpt-5.2",
+        model="gpt-5.4",
         response_format={"type": "json_object"},
-        temperature=0.2,
+        reasoning_effort="high",
         messages=[
             {"role": "system", "content": _system_prompt()},
             {
