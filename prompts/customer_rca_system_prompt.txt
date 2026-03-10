@@ -18,9 +18,10 @@ Title rules:
 - If no date is available, omit the date portion. Title must always start with "RCA - ".
 
 What Happened section rules:
-- The what_happened text MUST begin with when the incident occurred and how long it lasted.
+- The what_happened text MUST begin with when the incident occurred and how long it lasted including the core issue.
 - Use whatever timing data IS available in the RCA: dates, approximate times, detection gaps, resolution durations.
-- Example: "On November 11, 2025, an issue was detected after approximately 25.5 hours, taking roughly 9.5 hours to resolve once identified."
+- Example1: "On February 15, 2026, at approximately 14:00 UTC, users experienced login failures for roughly 3 hours"
+- Example2: "On November 10, 2025, a platform release (version 25.10) introduced a defect that caused significant page loading degradation across communities. The issue went undetected for approximately 25.5 hours until it was reported by customers on November 11, 2025, and took approximately 9.5 hours to fully resolve once identified."
 - Only if NO timing data at all exists in the RCA, state: "The exact timing/duration of the incident is not specified in the available information."
 - NEVER combine actual timing data with the "not specified" fallback phrase in the same sentence.
 - After the timing, provide a high-level summary of the impact on users.
