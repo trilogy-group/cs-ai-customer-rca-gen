@@ -214,8 +214,8 @@ def remove_old_customer_rca_blocks(page_id: str) -> int:
     Walks the page blocks and removes:
       - The "Customer-Facing RCA Draft" heading and everything below it that
         belongs to the generated section (headings, paragraphs, bullets, dividers, links).
-      - Any standalone divider + link-paragraph pairs that were appended by
-        append_customer_rca_link_only().
+      - Any standalone divider + callout pairs appended by append_customer_rca_link_only().
+      - Any standalone divider + link-paragraph pairs from older versions.
       - Review callout blocks inserted by the automation.
 
     Returns the number of blocks deleted.
@@ -259,7 +259,7 @@ def remove_old_customer_rca_blocks(page_id: str) -> int:
             # Hit a block that doesn't belong to the section \u2014 stop
             in_section = False
 
-        # Standalone link blocks (from append_customer_rca_link_only)
+        # Standalone link blocks (from older append_customer_rca_link_only versions)
         if not in_section and _is_customer_rca_link_block(b):
             # Also grab the divider immediately before it
             if i > 0 and blocks[i - 1].get("type") == "divider":
@@ -484,13 +484,6 @@ def append_customer_rca_link_only(page_id: str, child_url: str, label: str = CUS
     notion = get_notion_client()
     blocks: List[Dict[str, Any]] = [{"object": "block", "type": "divider", "divider": {}}]
     blocks.append(_review_callout_block(child_url))
-    blocks.append(
-        {
-            "object": "block",
-            "type": "paragraph",
-            "paragraph": {"rich_text": _to_rich_text(label, link_url=child_url, bold=True)},
-        }
-    )
     notion.blocks.children.append(block_id=_format_uuid(page_id), children=blocks)
 
 
