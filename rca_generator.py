@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -117,9 +118,10 @@ def generate_customer_rca(rca_text: str, title_hint: str) -> Dict[str, Any]:
     data = json.loads(raw)
 
     out: Dict[str, Any] = {}
-    out["title"] = _coerce_str(data.get("title"))
-    if not out["title"].startswith("RCA - "):
-        out["title"] = desired_title
+    raw_title = _coerce_str(data.get("title"))
+    # Strip placeholder text that may appear as a date suffix (e.g. "RCA - Foo - _No information...")
+    raw_title = re.sub(r"\s*-?\s*_No information available at this time\._\s*$", "", raw_title).rstrip(" -")
+    out["title"] = raw_title if raw_title.startswith("RCA - ") else desired_title
     out["what_happened"] = _coerce_str(data.get("what_happened"))
     out["root_cause"] = _coerce_str(data.get("root_cause"))
     out["what_we_did"] = _coerce_bullets(data.get("what_we_did"), min_items=3, max_items=5)

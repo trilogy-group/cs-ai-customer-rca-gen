@@ -84,7 +84,7 @@ def _process_rca(page_id: str, force: bool) -> Dict[str, Any]:
     rca_data = generate_customer_rca(rca_text=rca_text, title_hint=title_hint)
     _, child_url = notion_ops.create_customer_rca_child_page(page_id, rca_data)
 
-    notion_ops.append_customer_rca_section_and_link(page_id, rca_data, child_url)
+    notion_ops.append_customer_rca_link_only(page_id, child_url)
     notion_ops.set_page_url_property(page_id, notion_ops.CUSTOMER_RCA_DOC_PROP, child_url)
     return {"child_url": child_url, "regenerated": bool(already_processed or force)}
 
