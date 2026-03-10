@@ -11,6 +11,10 @@ from notion_client import Client as NotionClient
 RCA_DATABASE_ID = "18b85e927d3180c3890eceac97a51cb0"
 CUSTOMER_RCA_LINK_TEXT = "Customer-Facing RCA Document"
 CUSTOMER_RCA_DOC_PROP = "Customer RCA Doc"
+CUSTOMER_RCA_VIEW_URL = (
+    "https://www.notion.so/trilogy-enterprises/"
+    "18b85e927d3180c3890eceac97a51cb0?v=31485e927d3180dfab6e000ced0953a9"
+)
 
 
 def _find_token_file(start: Path, filename: str = "token.json", max_up: int = 5) -> Optional[Path]:
@@ -208,7 +212,7 @@ def remove_old_customer_rca_blocks(page_id: str) -> int:
     """Delete all blocks belonging to the customer-facing RCA section from the parent page.
 
     Walks the page blocks and removes:
-      - The \"Customer-Facing RCA Draft\" heading and everything below it that
+      - The "Customer-Facing RCA Draft" heading and everything below it that
         belongs to the generated section (headings, paragraphs, bullets, dividers, links).
       - Any standalone divider + link-paragraph pairs that were appended by
         append_customer_rca_link_only().
@@ -359,10 +363,46 @@ def _bullets_block(items: List[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _review_callout_block() -> Dict[str, Any]:
+    """Callout reminding the reviewer to mark 'Customer RCA Ready' in the database view."""
+    return {
+        "object": "block",
+        "type": "callout",
+        "callout": {
+            "icon": {"type": "emoji", "emoji": "\u26a0\ufe0f"},
+            "color": "yellow_background",
+            "rich_text": [
+                {
+                    "type": "text",
+                    "text": {"content": "Review Action Required: "},
+                    "annotations": {"bold": True},
+                },
+                {
+                    "type": "text",
+                    "text": {"content": "Once you have reviewed and approved this Customer RCA, please mark it as ready by updating the \"Customer RCA Ready\" checkbox in the "},
+                },
+                {
+                    "type": "text",
+                    "text": {
+                        "content": "Customer RCA View",
+                        "link": {"url": CUSTOMER_RCA_VIEW_URL},
+                    },
+                    "annotations": {"bold": True, "underline": True},
+                },
+                {
+                    "type": "text",
+                    "text": {"content": "."},
+                },
+            ],
+        },
+    }
+
+
 def create_customer_rca_child_page(parent_page_id: str, rca_data: Dict[str, Any]) -> Tuple[str, str]:
     notion = get_notion_client()
     title = rca_data.get("title") or "RCA - Untitled Incident"
     children: List[Dict[str, Any]] = []
+    children.append(_review_callout_block())
     children.append(_heading_block("What Happened", 2))
     children.append(_paragraph_block(rca_data.get("what_happened") or "No information available at this time."))
     children.append(_heading_block("Root Cause", 2))
