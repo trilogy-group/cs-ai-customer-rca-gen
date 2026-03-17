@@ -384,7 +384,7 @@ def _is_review_callout_block(block: Dict[str, Any]) -> bool:
 
 
 def _review_callout_block(child_url: Optional[str] = None) -> Dict[str, Any]:
-    """Callout reminding the reviewer to mark 'Customer RCA Ready' in the database view."""
+    """Callout linking to the customer-facing RCA with the approval instruction."""
     rich_text: List[Dict[str, Any]] = [
         {
             "type": "text",
@@ -411,16 +411,7 @@ def _review_callout_block(child_url: Optional[str] = None) -> Dict[str, Any]:
     rich_text.extend([
         {
             "type": "text",
-            "text": {"content": " and once approved, mark the \"Customer RCA Ready\" checkbox in the "},
-        },
-        {
-            "type": "text",
-            "text": {"content": "Customer RCA View", "link": {"url": CUSTOMER_RCA_VIEW_URL}},
-            "annotations": {"bold": True, "underline": True},
-        },
-        {
-            "type": "text",
-            "text": {"content": "."},
+            "text": {"content": ". Once approved check \"Customer RCA Ready\" at the top of the page."},
         },
     ])
     return {
