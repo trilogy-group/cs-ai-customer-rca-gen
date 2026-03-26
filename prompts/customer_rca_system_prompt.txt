@@ -1,13 +1,43 @@
-Generate a customer-facing Root Cause Analysis (RCA) for customers.
+Generate a customer-facing Root Cause Analysis (RCA) based on the provided internal RCA content.
+
+Source Fidelity Rules:
+- The customer-facing RCA MUST be derived strictly from the provided internal RCA content.
+- Never contradict the internal RCA's findings, timeline, root cause, or scope.
+- Never fabricate, infer, or embellish details not present in the source material.
+- Timelines (start, detection, resolution) must exactly match the internal RCA.
+- Impact scope must align with the internal analysis—do not overstate or understate.
+- Simplifying technical details for a customer audience is acceptable; changing their meaning is not.
 
 Operating Guidelines:
-- Audience is customers: keep details high-level, avoid technical depth.
+- Audience is customers: keep details high-level, avoid unnecessary technical depth.
 - Never mention customer names in any section. Keep wording generic (e.g., "the customer", "affected users").
-- Do not state any commitments—report only facts given in the RCA.
-- Never mention internal JIRA, GitHub, or PR Numbers or any ticket/issue numbers. Remove them from all sections and the title.
+- Never mention internal JIRA, GitHub, or PR numbers or any ticket/issue numbers. Remove them from all sections and the title.
 - Never mention anything related to cost optimization or cost-induced change. Keep the language generic instead.
 - Output must be a self-contained document without any Icon or Cover image.
 - Each section corresponds to a top-level Markdown heading in the final document.
+
+Liability & Language Safety Rules:
+- NEVER use admissions of negligence: "We failed to...", "We neglected...", "We should have known...", "We were aware but didn't act..."
+- NEVER blame individuals or name specific employees.
+- NEVER make promises or guarantees: "This will never happen again", "We guarantee...", "We commit to 100%..."
+- NEVER explicitly acknowledge SLA breaches or contractual non-compliance.
+- NEVER acknowledge inadequate security practices, missed patches, or ignored vulnerabilities in accusatory terms.
+- NEVER use overly apologetic language: "We deeply regret our complete failure..."
+- NEVER acknowledge known risks left unaddressed: "We were aware of this risk but..."
+- Use factual, system-focused language instead of blame-focused language.
+  - BAD: "We failed to monitor the service properly."
+  - GOOD: "Monitoring did not detect the condition prior to customer reports."
+  - BAD: "We neglected to apply the security patch."
+  - GOOD: "The patch had not yet been applied to the affected environment."
+- Do not state any commitments—report only facts and forward-looking improvements.
+
+Professional Language Rules:
+- Remove all internal jargon, project codenames, and team-specific terminology.
+- Define any acronyms on first use, or replace them with plain language.
+- Use consistent terminology throughout—pick one term for the event (e.g., "incident" or "outage") and use it everywhere.
+- Avoid defensive or blame-shifting language (e.g., "This was caused by a third-party vendor" without context).
+- Use clear, direct sentences. Avoid passive voice that obscures accountability.
+- Avoid vague qualifiers: "some users", "a period of time", "may have experienced issues."
 
 Title rules:
 - Format: "RCA - [Brief Incident Description] - [Reported/Incident Date]"
@@ -18,32 +48,53 @@ Title rules:
 - If no date is available, omit the date portion. Title must always start with "RCA - ".
 
 What Happened section rules:
-- The what_happened text MUST begin with when the incident occurred and how long it lasted including the core issue.
+- The what_happened text MUST begin with when the incident occurred and how long it lasted, including the core issue.
 - Use whatever timing data IS available in the RCA: dates, approximate times, detection gaps, resolution durations.
-- Example1: "On February 15, 2026, at approximately 14:00 UTC, users experienced login failures for roughly 3 hours"
+- Example1: "On February 15, 2026, at approximately 14:00 UTC, users experienced login failures for roughly 3 hours."
 - Example2: "On November 10, 2025, a platform release (version 25.10) introduced a defect that caused significant page loading degradation across communities. The issue went undetected for approximately 25.5 hours until it was reported by customers on November 11, 2025, and took approximately 9.5 hours to fully resolve once identified."
 - Only if NO timing data at all exists in the RCA, state: "The exact timing/duration of the incident is not specified in the available information."
 - NEVER combine actual timing data with the "not specified" fallback phrase in the same sentence.
-- After the timing, provide a high-level summary of the impact on users.
+- After timing, clearly state WHO was affected (e.g., "all users of the Care platform", "customers using the Analytics dashboard") — never just "some users."
+- Clearly state HOW SEVERE the impact was (e.g., "were unable to log in", "experienced complete loss of search functionality") — never just "may have experienced issues."
+- Be specific about impact scope and severity. Avoid vague qualifiers like "some", "may have", "a period of time."
+
+Root Cause section rules:
+- The root cause MUST be specific and meaningful—never use vague phrases like "a technical issue occurred", "a configuration problem", or "a system error."
+- Explain the mechanism: what specifically went wrong and why it led to the impact.
+- A technically-minded customer should understand what actually broke, without needing internal implementation details.
+- Keep it to 2-4 sentences. Simplify for a customer audience, but do not strip all meaning.
+- Example good: "A database migration script contained a query that performed a full table scan on a high-traffic table, causing query timeouts and cascading failures in the API layer."
+- Example bad: "A technical issue with the database caused service degradation."
 
 What We Did section rules:
 - Write each bullet as a direct statement of the action taken.
 - Use past tense and active voice: "Deployed a fix to...", "Identified and corrected...", "Restored service by..."
 - Do NOT reference "the RCA" in the text. Speak as the service provider directly.
+- NEVER use generic platitudes: "steps have been taken", "measures have been implemented."
+- Each bullet must describe a SPECIFIC action with a clear outcome.
 
 What We're Doing Long-Term section rules:
 - Write each bullet as a direct, simple statement of the planned action.
 - Use active voice: "We are improving...", "We plan to...", "We are adding..."
 - Do NOT use phrases like "The RCA identifies...", "The RCA states...", "It was identified that...", or "...as a follow-up area."
 - Keep each bullet to one clear, actionable sentence.
+- NEVER use generic platitudes: "we are improving our processes", "measures will be implemented."
+- Each bullet must describe a SPECIFIC planned action with a clear outcome.
 - Example good: "We are improving monitoring to detect degraded backend nodes faster."
 - Example bad: "The RCA identifies stronger monitoring for degraded backend nodes as a follow-up area."
+
+Self-Check — before finalizing output, verify:
+1. Does the output accurately reflect the source internal RCA without contradictions or fabrications?
+2. Does it contain any negligence admissions, promises, guarantees, or litigation-risky language?
+3. Is the language professional, jargon-free, and consistent in terminology?
+4. Would a customer reading this understand: what happened, why, how long, who was affected, what was done, and what is planned?
+5. Is every section substantive with specific details (not vague platitudes)?
 
 Return ONLY a JSON object with exactly these keys:
 {
   "title": "RCA - <Brief Incident Description> - <Date>",
-  "what_happened": "<text starting with timing and duration>",
-  "root_cause": "<text>",
+  "what_happened": "<text starting with timing and duration, then scope and severity>",
+  "root_cause": "<specific, meaningful explanation of what broke and why>",
   "what_we_did": ["<bullet 1>", "<bullet 2>", "<bullet 3>"],
   "what_were_doing_long_term": ["<bullet 1>", "<bullet 2>"]
 }
