@@ -11,6 +11,7 @@ from notion_client import Client as NotionClient
 RCA_DATABASE_ID = "18b85e927d3180c3890eceac97a51cb0"
 CUSTOMER_RCA_LINK_TEXT = "Customer-Facing RCA Document"
 CUSTOMER_RCA_DOC_PROP = "Customer RCA Doc"
+CUSTOMER_RCA_READY_PROP = "Customer RCA Ready"
 CUSTOMER_RCA_VIEW_URL = (
     "https://www.notion.so/trilogy-enterprises/"
     "18b85e927d3180c3890eceac97a51cb0?v=31485e927d3180dfab6e000ced0953a9"
@@ -321,6 +322,16 @@ def get_page_url_property(page_id: str, prop_name: str) -> str:
     if (prop.get("type") or "") == "url":
         return (prop.get("url") or "").strip()
     return ""
+
+
+def get_page_checkbox_property(page_id: str, prop_name: str) -> bool:
+    notion = get_notion_client()
+    page = notion.pages.retrieve(page_id=_format_uuid(page_id))
+    props = page.get("properties", {}) or {}
+    prop = props.get(prop_name) or {}
+    if (prop.get("type") or "") == "checkbox":
+        return bool(prop.get("checkbox"))
+    return False
 
 
 def set_page_url_property(page_id: str, prop_name: str, url: str) -> None:

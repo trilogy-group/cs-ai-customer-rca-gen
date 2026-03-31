@@ -19,9 +19,26 @@ _executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 
 def _process_rca(page_id: str, force: bool) -> Dict[str, Any]:
+    customer_rca_ready = notion_ops.get_page_checkbox_property(page_id, notion_ops.CUSTOMER_RCA_READY_PROP)
     already_processed = notion_ops.has_existing_customer_rca(page_id)
 
-    logging.info("Processing RCA page_id=%s already_processed=%s", page_id, already_processed)
+    logging.info(
+        "Processing RCA page_id=%s already_processed=%s ready=%s force=%s",
+        page_id,
+        already_processed,
+        customer_rca_ready,
+        force,
+    )
+
+    if customer_rca_ready:
+        child_url = notion_ops.get_page_url_property(page_id, notion_ops.CUSTOMER_RCA_DOC_PROP)
+        logging.info("Skipping regeneration because Customer RCA Ready is already checked")
+        return {
+            "child_url": child_url,
+            "regenerated": False,
+            "skipped": True,
+            "skip_reason": "customer_rca_ready",
+        }
 
     if already_processed:
         archived_id = notion_ops.archive_old_customer_rca_child(page_id)

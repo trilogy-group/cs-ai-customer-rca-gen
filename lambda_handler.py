@@ -66,9 +66,26 @@ def _process_rca(page_id: str, force: bool) -> Dict[str, Any]:
     import rca_notion_ops as notion_ops
     from rca_generator import generate_customer_rca
 
+    customer_rca_ready = notion_ops.get_page_checkbox_property(page_id, notion_ops.CUSTOMER_RCA_READY_PROP)
     already_processed = notion_ops.has_existing_customer_rca(page_id)
 
-    logger.info("Processing RCA page_id=%s already_processed=%s force=%s", page_id, already_processed, force)
+    logger.info(
+        "Processing RCA page_id=%s already_processed=%s ready=%s force=%s",
+        page_id,
+        already_processed,
+        customer_rca_ready,
+        force,
+    )
+
+    if customer_rca_ready:
+        child_url = notion_ops.get_page_url_property(page_id, notion_ops.CUSTOMER_RCA_DOC_PROP)
+        logger.info("Skipping regeneration because Customer RCA Ready is already checked")
+        return {
+            "child_url": child_url,
+            "regenerated": False,
+            "skipped": True,
+            "skip_reason": "customer_rca_ready",
+        }
 
     # Clean up old artifacts before reading content for generation
     if already_processed:
