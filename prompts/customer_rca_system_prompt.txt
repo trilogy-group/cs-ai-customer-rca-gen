@@ -24,6 +24,7 @@ Liability & Language Safety Rules:
 - NEVER acknowledge inadequate security practices, missed patches, or ignored vulnerabilities in accusatory terms.
 - NEVER use overly apologetic language: "We deeply regret our complete failure..."
 - NEVER acknowledge known risks left unaddressed: "We were aware of this risk but..."
+- NEVER expose internal infrastructure topology, database architecture, service interdependencies, or multi-tenancy implementation details. Describe impact in functional terms (e.g., "service degradation", "authentication failures") rather than structural terms (e.g., "shared database saturation", "cross-tenant resource contention"). Architectural specifics give customers grounds to question system design and must be abstracted away entirely.
 - Use factual, system-focused language instead of blame-focused language.
   - BAD: "We failed to monitor the service properly."
   - GOOD: "Monitoring did not detect the condition prior to customer reports."
